@@ -17,42 +17,34 @@ cursor.execute('create table works ('
                'otherInfo TEXT)')
 con.commit()
 
-df = pd.read_csv("works.csv")
-
-df.to_sql("works", con, if_exists='append', index=False)
+cursor.execute('drop table if exists genders')
+cursor.execute('create table genders(id INTEGER PRIMARY KEY AUTOINCREMENT, gender_val TEXT)')
 con.commit()
 
-cursor.execute('create index salary_index on works (salary)')
+cursor.execute('INSERT INTO genders(gender_val) SELECT DISTINCT gender FROM works WHERE gender IS NOT NULL')
 con.commit()
 
-cursor.execute('SELECT COUNT(*) FROM works')
-print(cursor.fetchall()[0][0])
+cursor.execute('ALTER TABLE works ADD COLUMN gender_id INTEGER REFERENCES genders(id)')
+con.commit()
 
-cursor.execute('SELECT COUNT(*) FROM works where gender = "Мужской"')
-print(cursor.fetchall()[0][0])
+cursor.execute('UPDATE works SET gender_id = (SELECT id FROM genders WHERE gender_val = works.gender)')
+con.commit()
 
-cursor.execute('SELECT COUNT(*) FROM works where gender = "Женский"')
-print(cursor.fetchall()[0][0])
+cursor.execute('ALTER TABLE works DROP COLUMN gender')
+con.commit()
 
-cursor.execute('SELECT COUNT(*) FROM works where skills not null')
-print(cursor.fetchall()[0][0])
+cursor.execute('drop table if exists education')
+cursor.execute('create table education(id INTEGER PRIMARY KEY AUTOINCREMENT, edu_val TEXT)')
+con.commit()
 
-cursor.execute('SELECT salary FROM works where skills LIKE "%Python%"')
-print(cursor.fetchall())
+cursor.execute('INSERT INTO education(edu_val) SELECT DISTINCT educationType FROM works WHERE educationType IS NOT NULL')
+con.commit()
 
-cursor.execute('SELECT salary FROM works where gender = "Мужской"')
-man_salary = [t[0] for t in cursor.fetchall()]
-print(man_salary)
+cursor.execute('ALTER TABLE works ADD COLUMN educationType_id INTEGER REFERENCES education(id)')
+con.commit()
 
-cursor.execute('SELECT salary FROM works where gender = "Женский"')
-w_salary = [t[0] for t in cursor.fetchall()]
-print(w_salary)
+cursor.execute('UPDATE works SET educationType_id = (SELECT id FROM education WHERE edu_val = works.educationType)')
+con.commit()
 
-plt.plot()
-man_salary = np.quantile(man_salary, np.linspace(0.1, 1, 10))
-w_salary = np.quantile(w_salary, np.linspace(0.1, 1, 10))
-
-plt.hist(man_salary, bins=100, color='blue')
-plt.show()
-plt.hist(w_salary, bins=100, color='red')
-plt.show()
+cursor.execute('ALTER TABLE works DROP COLUMN educationType')
+con.commit()
